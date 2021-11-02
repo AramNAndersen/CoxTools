@@ -20,7 +20,7 @@ library("CoxTools")
 # Model C-index testing
 list_Ridge_andElnet_Cox_testing <- Cox_forecasting_glmnet_CVA(X_data=X.train.AUC, 
                                                               y_data=y.train, 
-                                                              alpha=(0,"CVA", 
+                                                              alpha=c(0,"CVA"), 
                                                               lambda=c(exp(seq(-4,6, 0.1))),
                                                               free_cores = 2,
                                                               test.n= c(6,4), 
