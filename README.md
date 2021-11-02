@@ -1,5 +1,5 @@
 # CoxTools
-Tools for clinical forecasting from drug screens using Cox regression
+Tools for clinical forecasting from drug screens using Cox regression.
 The package requires dplyr, reshape, doSNOW, glmnet and glmnetUtils.
 
 # Installation:
