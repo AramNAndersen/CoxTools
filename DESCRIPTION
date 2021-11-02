@@ -1,11 +1,11 @@
 Package: CoxTools
-Title: What the Package Does (One Line, Title Case)
+Title: Tools for clinical forecasting from drug screens using Cox regression. 
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
+    person(given = "Aram Nikolai",
+           family = "Andersen",
            role = c("aut", "cre"),
-           email = "first.last@example.com",
+           email = "a.n.andersen@gmail.com",
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: What the package does (one paragraph).
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
