@@ -6,7 +6,7 @@ The package requires dplyr, reshape, doSNOW, glmnet and glmnetUtils.
 ``` r
 devtools::install_github("AramNAndersen/CoxTools",
                          ref="main",
-                         auth_token = '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')
+                         auth_token = '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')
 ``` 
 # Example:
 ``` r
