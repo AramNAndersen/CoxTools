@@ -67,7 +67,7 @@ Cox_forecasting_glmnet_CVA <- function(X_data,
               x_sd <- matrixStats::colSds(X)
               x_mean <- colMeans(X)
               X <- t((t(X) - colMeans(X))/matrixStats::colSds(X))
-              if(length(which(is.na(X))){X <- replace(X,is.na(X),0)}
+              if(length(which(is.na(X)))){X <- replace(X,is.na(X),0)}
               svdz <- svd(t(X))
               X <- svdz$u[,-c(1:cpc)] %*% diag(svdz$d[-c(1:cpc)]) %*% t(svdz$v[,-c(1:cpc)])
               X <- X*x_sd + x_mean
@@ -77,7 +77,7 @@ Cox_forecasting_glmnet_CVA <- function(X_data,
 
             if(drug.st){
               X <- t((t(X) - colMeans(X))/matrixStats::colSds(X))
-              if(length(which(is.na(X))){X <- replace(X,is.na(X),0)}
+              if(length(which(is.na(X)))){X <- replace(X,is.na(X),0)}
             }
 
             Y <- y_data
@@ -271,7 +271,7 @@ Cox_forecasting_glmnet <- function(X_data,
               x_sd <- matrixStats::colSds(X)
               x_mean <- colMeans(X)
               X <- t((t(X) - colMeans(X))/matrixStats::colSds(X))
-              if(length(which(is.na(X))){X <- replace(X,is.na(X),0)}
+              if(length(which(is.na(X)))){X <- replace(X,is.na(X),0)}
               svdz <- svd(t(X))
               X <- svdz$u[,-c(1:cpc)] %*% diag(svdz$d[-c(1:cpc)]) %*% t(svdz$v[,-c(1:cpc)])
               X <- X*x_sd + x_mean
@@ -281,7 +281,7 @@ Cox_forecasting_glmnet <- function(X_data,
 
             if(drug.st){
               X <- t((t(X) - colMeans(X))/matrixStats::colSds(X))
-              if(length(which(is.na(X))){X <- replace(X,is.na(X),0)}
+              if(length(which(is.na(X)))){X <- replace(X,is.na(X),0)}
             }
 
             Y <- y_data
@@ -473,7 +473,7 @@ Cox_forecasting_glmnet_combination <- function(X_data,
               x_sd <- matrixStats::colSds(X)
               x_mean <- colMeans(X)
               X <- t((t(X) - colMeans(X))/matrixStats::colSds(X))
-              if(length(which(is.na(X))){X <- replace(X,is.na(X),0)}
+              if(length(which(is.na(X)))){X <- replace(X,is.na(X),0)}
               svdz <- svd(t(X))
               X <- svdz$u[,-c(1:cpc)] %*% diag(svdz$d[-c(1:cpc)]) %*% t(svdz$v[,-c(1:cpc)])
               X <- X*x_sd + x_mean
@@ -483,7 +483,7 @@ Cox_forecasting_glmnet_combination <- function(X_data,
 
             if(drug.st){
               X <- t((t(X) - colMeans(X))/matrixStats::colSds(X))
-              if(length(which(is.na(X))){X <- replace(X,is.na(X),0)}
+              if(length(which(is.na(X)))){X <- replace(X,is.na(X),0)}
             }
             X <- cbind(X, Z_data)
             Y <- y_data
@@ -572,7 +572,7 @@ Cox_forecasting_glmnet_combination <- function(X_data,
               x_sd <- matrixStats::colSds(X)
               x_mean <- colMeans(X)
               X <- t((t(X) - colMeans(X))/matrixStats::colSds(X))
-              if(length(which(is.na(X))){X <- replace(X,is.na(X),0)}
+              if(length(which(is.na(X)))){X <- replace(X,is.na(X),0)}
               svdz <- svd(t(X))
               X <- svdz$u[,-c(1:cpc)] %*% diag(svdz$d[-c(1:cpc)]) %*% t(svdz$v[,-c(1:cpc)])
               X <- X*x_sd + x_mean
@@ -582,7 +582,7 @@ Cox_forecasting_glmnet_combination <- function(X_data,
 
             if(drug.st){
               X <- t((t(X) - colMeans(X))/matrixStats::colSds(X))
-              if(length(which(is.na(X))){X <- replace(X,is.na(X),0)}
+              if(length(which(is.na(X)))){X <- replace(X,is.na(X),0)}
             }
 
             Y <- y_data
@@ -713,7 +713,7 @@ Cox_bootstrapping <- function(X_data,
     x_sd <- matrixStats::colSds(X)
     x_mean <- colMeans(X)
     X <- t((t(X) - colMeans(X))/matrixStats::colSds(X))
-    if(length(which(is.na(X))){X <- replace(X,is.na(X),0)}
+    if(length(which(is.na(X)))){X <- replace(X,is.na(X),0)}
     svdz <- svd(t(X))
     X <- svdz$u[,-c(1:cpc)] %*% diag(svdz$d[-c(1:cpc)]) %*% t(svdz$v[,-c(1:cpc)])
     X <- X*x_sd + x_mean
@@ -722,7 +722,7 @@ Cox_bootstrapping <- function(X_data,
   }
   if(drug.st){
     X <- t((t(X) - colMeans(X))/matrixStats::colSds(X))
-    if(length(which(is.na(X))){X <- replace(X,is.na(X),0)}
+    if(length(which(is.na(X)))){X <- replace(X,is.na(X),0)}
   }
   Y <- y_data
   colnames(X) <- colnames(X_data)
@@ -863,7 +863,7 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
     x_sd <- matrixStats::colSds(X)
     x_mean <- colMeans(X)
     X <- t((t(X) - colMeans(X))/matrixStats::colSds(X))
-    if(length(which(is.na(X))){X <- replace(X,is.na(X),0)}
+    if(length(which(is.na(X)))){X <- replace(X,is.na(X),0)}
     svdz <- svd(t(X))
     X <- svdz$u[,-c(1:cpc)] %*% diag(svdz$d[-c(1:cpc)]) %*% t(svdz$v[,-c(1:cpc)])
     X <- X*x_sd + x_mean
@@ -872,7 +872,7 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
   }
   if(drug.st){
     X <- t((t(X) - colMeans(X))/matrixStats::colSds(X))
-    if(length(which(is.na(X))){X <- replace(X,is.na(X),0)}
+    if(length(which(is.na(X)))){X <- replace(X,is.na(X),0)}
   }
   Y <- y_data
   colnames(X) <- colnames(X_data)
