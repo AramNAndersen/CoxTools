@@ -1054,7 +1054,7 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
     }else{
       return(list_res_initial)
     }
-    save(list_res_initial, path)
+    save(list_res_initial, file=path)
   }else{
     list_res_initial <- Drug_WD_test(X_data, 
                                      y_data, 
@@ -1110,7 +1110,7 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
       list_res_iter$WD_optimization$Naive_reduction_summary <- df_naive_reduction_sum
       list_res_iter$WD_optimization$X_reduced <- X_data_red
       list_res_iterations[[paste0("WD_reduction_", c)]] <- list_res_iter
-      save(list_res_iterations, path)
+      save(list_res_iterations, file=path)
       c = c + 1
     }
     return(list_res_iterations)
