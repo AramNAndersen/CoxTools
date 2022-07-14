@@ -987,13 +987,12 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
       df_parent1$C_index_test <- mat.C.index.test[,dr]
       df_parent1$C_index_train <- mat.C.index.train[,dr]
       loss <- mean(df_parent1$C_index_test - df_parent$C_index_test)
-      df_loss1 <- df_loss[df_loss$Var != dr,]
+      df_loss1 <- df_loss
+      
       list_naive_reduction <- list()
       list_naive_reduction[[1]] <- df_parent
-      list_naive_reduction[[2]] <- df_parent1
       list_naive_reduction[[1]]$Data <- "WD0_full"
-      list_naive_reduction[[2]]$Data <- paste0("WD1_", dr)
-      j=3
+      j=2
       while(loss>=0 & ncol(X_data1)>2){
         dr=df_loss1$Var[which.max(df_loss1$C_loss_test)]
         X_data1 <- X_data1[,colnames(X_data1) != dr]
@@ -1082,7 +1081,7 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
     list_res_iterations <- list()
     list_res_iterations[["WD_reduction_0"]] <- list_res_initial
     c = 1
-    while(ncol(X_data_red)<ncol(X_data) & ncol(X_data_red)>2 & (df_naive_reduction_sum$Mean[which.max(df_naive_reduction_sum$Mean)] - df_naive_reduction_sum$Mean[1] >0)){
+    while(ncol(X_data_red)<ncol(X_data) & ncol(X_data_red)>2 & (df_naive_reduction_sum$Mean[which.max(df_naive_reduction_sum$Mean)] - df_naive_reduction_sum$Mean[1] >=0)){
       cat("\nIterative model reduction:",c,"\n")
       X_data <- X_data_red
       list_res_iter <- Drug_WD_test(X_data, 
