@@ -1072,11 +1072,11 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
     df_naive_reduction <- list_res_initial$WD_optimization$Naive_reduction
     df_naive_reduction_sum <- df_naive_reduction %>% group_by(ID, Data) %>% summarise(Mean=mean(C_index_test), Median=median(C_index_test))
     remove_stop <- which.max(df_naive_reduction_sum$Mean)
-    remove_drugs <-gsub(".*_","", df_naive_reduction_sum$Data[2:remove_stop])
+    remove_drugs <-gsub(".*_","", df_naive_reduction_sum$Data[1:remove_stop])[-1]
     remaining_drugs <- colnames(X)
     remaining_drugs <- remaining_drugs[!(remaining_drugs %in% remove_drugs)]
     X_data_red <- X_data[,which(colnames(X_data) %in% remaining_drugs)]
-    list_res_initial$WD_optimization$Naive_reduction_summary <- df_naive_reduction_sum
+    list_res_initial$WD_optimization$Naive_reduction_summary <- df_naive_reduction_sum[1:which.max(df_naive_reduction_sum$Mean),]
     list_res_initial$WD_optimization$X_reduced <- X_data_red
     
     list_res_iterations <- list()
@@ -1103,11 +1103,11 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
       df_naive_reduction <- list_res_iter$WD_optimization$Naive_reduction
       df_naive_reduction_sum <- df_naive_reduction %>% group_by(ID, Data) %>% summarise(Mean=mean(C_index_test), Median=median(C_index_test))
       remove_stop <- which.max(df_naive_reduction_sum$Mean)
-      remove_drugs <-gsub(".*_","", df_naive_reduction_sum$Data[2:remove_stop])
+      remove_drugs <-gsub(".*_","", df_naive_reduction_sum$Data[1:remove_stop])[-1]
       remaining_drugs <- colnames(X)
       remaining_drugs <- remaining_drugs[!(remaining_drugs %in% remove_drugs)]
       X_data_red <- X_data[,which(colnames(X_data) %in% remaining_drugs)]
-      list_res_iter$WD_optimization$Naive_reduction_summary <- df_naive_reduction_sum
+      list_res_iter$WD_optimization$Naive_reduction_summary <- df_naive_reduction_sum[1:which.max(df_naive_reduction_sum$Mean),]
       list_res_iter$WD_optimization$X_reduced <- X_data_red
       list_res_iterations[[paste0("WD_reduction_", c)]] <- list_res_iter
       save(list_res_iterations, file=path)
