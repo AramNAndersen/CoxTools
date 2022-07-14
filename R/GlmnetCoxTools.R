@@ -1082,7 +1082,7 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
     list_res_iterations <- list()
     list_res_iterations[["WD_reduction_0"]] <- list_res_initial
     c = 1
-    while(ncol(X_data_red)<ncol(X_data) & ncol(X_data_red)>2){
+    while(ncol(X_data_red)<ncol(X_data) & ncol(X_data_red)>2 & (df_naive_reduction_sum$Mean[which.max(df_naive_reduction_sum$Mean)] - df_naive_reduction_sum$Mean[1] >0)){
       cat("\nIterative model reduction:",c,"\n")
       X_data <- X_data_red
       list_res_iter <- Drug_WD_test(X_data, 
