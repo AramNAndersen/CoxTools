@@ -982,7 +982,7 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
       cat("\nInitiating naive model reduction:\n")
       
       dr=df_loss$Var[which.max(df_loss$C_loss_test)]
-      X_data1 <- X_data[,colnames(X_data) != dr]
+      X_data1 <- X_data
       df_parent1 <- df_parent
       df_parent1$C_index_test <- mat.C.index.test[,dr]
       df_parent1$C_index_train <- mat.C.index.train[,dr]
