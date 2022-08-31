@@ -247,13 +247,13 @@ Cox_forecasting_glmnet_CVA_center <- function(X_data,
   cva_fit_plots_alldata <- list()
   cva_fit_coefs.alldata <- c()
   df_C.index.alldata <- c()
-
+  
   for(al in alpha){
     for(Transform in c("log2(AUC)", "AUC")[log_AUC]){
       for(pt.st in c(TRUE, FALSE)[Patient.Z] ){
         for(cpc in RCPC){
-          for(drug.st in c(1, 2, "healthy")[Drug.C]){
-            i=paste0(Transform, c("/Patient_stdz")[pt.st], ifelse(drug.st=="healthy","/Healthy_controls",c("/Drug_centered","")[drug.st]),"/RCPC_", cpc, "/Penalty_", al)
+          for(drug.st in Drug.C){
+            i=paste0(Transform, c("/Patient_stdz")[pt.st], ifelse(drug.st==3,"/Healthy_controls",c("/Drug_centered","")[drug.st]),"/RCPC_", cpc, "/Penalty_", al)
             set.seed(1)
             X <- X_data
             l=min(data.frame(replace(X, X == 0, 1)))
@@ -280,16 +280,16 @@ Cox_forecasting_glmnet_CVA_center <- function(X_data,
               X <- t(X)
               rm(svdz, x_mean, x_sd)
             }
-
-            if(drug.st == "healthy"){
+            
+            if(drug.st == 3){
               X <- t((t(X) - as.numeric(X[nrow(X),])))
               X <- X[-nrow(X),]
             }else if(drug.st == 1){
               X <- t((t(X) - colMeans(X)))
             }
-
+            
             Y <- y_data
-
+            
             cores <- parallel::detectCores()-free_cores
             cluster.cores<-makeCluster(cores)
             cva <- cva.glmnet(x=X, y=Y, alpha = seq(0, 1, len = 20)^3, family = "cox",
@@ -299,13 +299,13 @@ Cox_forecasting_glmnet_CVA_center <- function(X_data,
             closeAllConnections()
             rm(cluster.cores)
             rm(cores)
-
+            
             names(cva$modlist) <- round(cva$alpha, digits = 6)
             cva_fit_cv <- cva$modlist %>% lapply(function(x) do.call("cbind", x[c(1:6)]) %>% as_tibble())
             cva_fit_cv <- cva_fit_cv %>%
               bind_rows(.id = "alpha") %>%
               mutate(alpha = as.numeric(alpha))
-
+            
             # Collect cvm plots drug screen data
             p=cva_fit_cv %>%
               mutate(f_alpha = factor(alpha), cv_min = min(cvm)) %>%
@@ -319,7 +319,7 @@ Cox_forecasting_glmnet_CVA_center <- function(X_data,
               theme()+
               theme(axis.text.x = element_text(angle = 45, hjust = 1))
             cva_fit_plots_alldata[[i]] <- p
-
+            
             # Collect top cva results drug screen data
             cva_fit_cv$rank <- rank(cva_fit_cv$cvm)
             cva_fit_cv$class <- "Ridge"
@@ -330,7 +330,7 @@ Cox_forecasting_glmnet_CVA_center <- function(X_data,
             cva_fit_cv_best <- cva_fit_cv[(cva_fit_cv %>% mutate(id = paste0(class, alpha)) %>% group_by(id) %>% summarise(rank.min = min(rank)) %>% mutate(best.hit = paste0(id, rank.min)))$best.hit,]
             cva_fit_cv_best$dataset.id <- i
             cva_fit_cv_best_alldata <- rbind(cva_fit_cv_best_alldata, cva_fit_cv_best)
-
+            
             # Collect coefficients for all models (drug screen data)
             coefs.alpha <- c()
             for(j in 1:nrow(cva_fit_cv_best)){
@@ -344,7 +344,7 @@ Cox_forecasting_glmnet_CVA_center <- function(X_data,
             coefs.alpha<-data.frame(coefs.alpha)
             coefs.alpha$dataset.id <- i
             cva_fit_coefs.alldata <- rbind(cva_fit_coefs.alldata, coefs.alpha)
-
+            
             # Compute out-of-sample prediction c-index (drug screen data)
             if(al == "CVA"){
               a = cva_fit_cv_best$alpha[which.min(cva_fit_cv_best$cvm)]
@@ -364,25 +364,25 @@ Cox_forecasting_glmnet_CVA_center <- function(X_data,
               X.1 <- X[Y[,2]==1,]
               Y.0 <- Y[Y[,2]==0,]
               Y.1 <- Y[Y[,2]==1,]
-
+              
               ind.0 <- sample(seq_len(nrow(Y.0)), size = test.n[1] , replace=FALSE)
               ind.1 <- sample(seq_len(nrow(Y.1)), size = test.n[2] , replace=FALSE)
-
+              
               train <- rbind(X.0[-ind.0,], X.1[-ind.1,])
               test <- rbind(X.0[ind.0,], X.1[ind.1,])
-
+              
               Y.train.loop <- rbind(Y.0[-ind.0,], Y.1[-ind.1,])
               Y.test.loop <- rbind(Y.0[ind.0,], Y.1[ind.1,])
-
+              
               model.loop <- glmnet(train, Y.train.loop, family = "cox", alpha = a, standardize = FALSE,lambda=lambda,  type.measure = "deviance")
               nfolds=nrow(train)
               model.loop.cv <- cv.glmnet(train, Y.train.loop, family = "cox", alpha = a, standardize = FALSE,lambda=lambda,  type.measure = "deviance", nfolds=nfolds)
-
+              
               c=Cindex(predict(model.loop, s = model.loop.cv$lambda.min, newx= data.matrix(test)), y=data.matrix(Y.test.loop))
               ct=Cindex(predict(model.loop, s = model.loop.cv$lambda.min, newx= data.matrix(train)), y=data.matrix(Y.train.loop))
-
+              
               rm(X.0, X.1, Y.1, Y.0, train, test, Y.train.loop, Y.test.loop, model.loop, model.loop.cv, ind.0, ind.1)
-
+              
               return(c(c,ct))
             }
             stopCluster(cluster.cores)
@@ -390,18 +390,18 @@ Cox_forecasting_glmnet_CVA_center <- function(X_data,
             rm(cluster.cores)
             rm(cores)
             gc()
-
+            
             df_C_index <- do.call(rbind, list_C_index)
             df_C_index <- data.frame(df_C_index)
             colnames(df_C_index) <- c("C_index_test", "C_index_train")
             df_C_index$Iteration <- 1:iter
             df_C_index$ID <- i
-
+            
             df_C.index.alldata <- rbind(df_C.index.alldata, df_C_index)
-
+            
             cat("\nAnalysis completed for: ", i,"\n")
             rm(X,Y, cva_fit_cv_best, coefs.alpha, df_C_index, cva, cva_fit_cv, list_C_index, opts, pb, p)
-
+            
           }
         }
       }
