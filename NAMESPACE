@@ -2,7 +2,9 @@
 
 export(Cox_bootstrapping)
 export(Cox_forecasting_drug_withdrawal)
+export(Cox_forecasting_drug_withdrawal2)
 export(Cox_forecasting_glmnet)
 export(Cox_forecasting_glmnet_CVA)
+export(Cox_forecasting_glmnet_CVA_center)
 export(Cox_forecasting_glmnet_combination)
 importFrom(magrittr,"%>%")
