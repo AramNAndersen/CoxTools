@@ -11,6 +11,7 @@ Cox_forecasting_glmnet(
   lambda = c(exp(seq(-4, 6, 0.1))),
   free_cores = 2,
   test.n = c(6, 4),
+  nfolds = nrow(y_data),
   iter = 200,
   log_AUC = c(1:2),
   Patient.Z = c(1:2),

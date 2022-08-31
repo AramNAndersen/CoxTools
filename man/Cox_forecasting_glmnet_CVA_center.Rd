@@ -2,7 +2,7 @@
 % Please edit documentation in R/GlmnetCoxTools.R
 \name{Cox_forecasting_glmnet_CVA_center}
 \alias{Cox_forecasting_glmnet_CVA_center}
-\title{Cox forecasting glmnet with alpha cross-validation}
+\title{Cox forecasting glmnet with alpha cross-validation and drug sensitivity centering or control subtraction}
 \usage{
 Cox_forecasting_glmnet_CVA_center(
   X_data,
@@ -15,7 +15,7 @@ Cox_forecasting_glmnet_CVA_center(
   iter = 200,
   log_AUC = c(1:2),
   Patient.Z = c(1:2),
-  Drug.Z = c(1:2),
+  Drug.C = c(1:3),
   RCPC = c(0, 1, 2, 3, 4)
 )
 }
@@ -40,7 +40,7 @@ Cox_forecasting_glmnet_CVA_center(
 
 \item{Patient.Z}{Patient-wise standardization. 1 for yes, 2 for no, or c(1,2) for both.}
 
-\item{Drug.C}{Drug-wise centering. 1 for yes, 2 for no, 3 for healthy controls (last row in the dataset),  or c(1,2,3) for all}
+\item{Drug.C}{Drug-wise centering. 1 for yes, 2 for no, 3 for healthy controls (last row in the dataset),  or c(1,2,3) for all.}
 
 \item{RCPC}{Removal of confounding principal components.}
 }

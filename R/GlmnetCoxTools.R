@@ -232,17 +232,17 @@ Cox_forecasting_glmnet_CVA <- function(X_data,
 #'
 #' @export
 Cox_forecasting_glmnet_CVA_center <- function(X_data,
-                                       y_data,
-                                       alpha=0,
-                                       lambda=c(exp(seq(-4,6, 0.1))),
-                                       free_cores = 2,
-                                       test.n= c(6,4),
-                                       nfolds = nrow(y.train.red),
-                                       iter=200,
-                                       log_AUC=c(1:2),
-                                       Patient.Z=c(1:2),
-                                       Drug.C =c(1:3),
-                                       RCPC=c(0,1,2,3,4)){
+                                              y_data,
+                                              alpha=0,
+                                              lambda=c(exp(seq(-4,6, 0.1))),
+                                              free_cores = 2,
+                                              test.n= c(6,4),
+                                              nfolds = nrow(y.train.red),
+                                              iter=200,
+                                              log_AUC=c(1:2),
+                                              Patient.Z=c(1:2),
+                                              Drug.C =c(1:3),
+                                              RCPC=c(0,1,2,3,4)){
   cva_fit_cv_best_alldata <- c()
   cva_fit_plots_alldata <- list()
   cva_fit_coefs.alldata <- c()
@@ -411,7 +411,7 @@ Cox_forecasting_glmnet_CVA_center <- function(X_data,
               CVA_plots = cva_fit_plots_alldata,
               CVA_coefficients= cva_fit_coefs.alldata,
               C_index_results = df_C.index.alldata))
-}                                                 
+}
 #'
 #'
 #' Cox forecasting glmnet
@@ -907,10 +907,10 @@ Cox_bootstrapping <- function(X_data,
   l=min(data.frame(replace(X, X == 0, 1)))
   if(Transform=="log2(AUC)"){
     if(length(which(X <= 0))){
-                X <- data.matrix(-log2(X + l))
-              }else{
-                X <- data.matrix(-log2(X))
-              }
+      X <- data.matrix(-log2(X + l))
+    }else{
+      X <- data.matrix(-log2(X))
+    }
   }else{
     X <- data.matrix(X)
   }
@@ -1012,7 +1012,7 @@ Cox_bootstrapping <- function(X_data,
 #'
 #' @param X_data Input drug screen data
 #' @param y_data Survival data
-#' @param Reduce Variable removal for dimension reduction. "None" for only testing the variables. "Naive" reduce the model by removing one and one variable starting from highest C-index gain until optimal model is found. 
+#' @param Reduce Variable removal for dimension reduction. "None" for only testing the variables. "Naive" reduce the model by removing one and one variable starting from highest C-index gain until optimal model is found.
 #' @param alpha Penalty type. 0 for L2 (Ridge), 1 for L1 (Lasso), or any number between 0 and 1 for elastic net penalty.
 #' @param lambda Vector of regularization penalties.
 #' @param free_cores Number of free cores.
@@ -1046,7 +1046,7 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
                                             Drug.Z =c(1:2),
                                             RCPC=c(0,1,2,3,4),
                                             path=path){
-  
+
   Drug_WD_test <- function(X_data,
                            y_data,
                            Reduce=c("None","Naive"),
@@ -1099,13 +1099,13 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
     Y <- y_data
     colnames(X) <- colnames(X_data)
     X_data <- X
-    
+
     # Prediction function
     Pred_cox <- function(X,
                          Y,
                          test.n=test.n,
                          a=a,lambda=lambda, iter=iter, i=i){
-      
+
       cores <- parallel::detectCores()-free_cores
       cluster.cores<-makeCluster(cores)
       registerDoSNOW(cluster.cores)
@@ -1119,25 +1119,25 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
         X.1 <- X[Y[,2]==1,]
         Y.0 <- Y[Y[,2]==0,]
         Y.1 <- Y[Y[,2]==1,]
-        
+
         ind.0 <- sample(seq_len(nrow(Y.0)), size = test.n[1] , replace=FALSE)
         ind.1 <- sample(seq_len(nrow(Y.1)), size = test.n[2] , replace=FALSE)
-        
+
         train <- rbind(X.0[-ind.0,], X.1[-ind.1,])
         test <- rbind(X.0[ind.0,], X.1[ind.1,])
-        
+
         Y.train.loop <- rbind(Y.0[-ind.0,], Y.1[-ind.1,])
         Y.test.loop <- rbind(Y.0[ind.0,], Y.1[ind.1,])
-        
+
         model.loop <- glmnet(train, Y.train.loop, family = "cox", alpha = a, standardize = FALSE,lambda=lambda,  type.measure = "deviance")
         nfolds=nrow(train)
         model.loop.cv <- cv.glmnet(train, Y.train.loop, family = "cox", alpha = a, standardize = FALSE,lambda=lambda,  type.measure = "deviance", nfolds=nfolds)
-        
+
         c=Cindex(predict(model.loop, s = model.loop.cv$lambda.min, newx= data.matrix(test)), y=data.matrix(Y.test.loop))
         ct=Cindex(predict(model.loop, s = model.loop.cv$lambda.min, newx= data.matrix(train)), y=data.matrix(Y.train.loop))
-        
+
         rm(X.0, X.1, Y.1, Y.0, train, test, Y.train.loop, Y.test.loop, model.loop, model.loop.cv, ind.0, ind.1)
-        
+
         return(c(c,ct))
       }
       stopCluster(cluster.cores)
@@ -1145,28 +1145,28 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
       rm(cluster.cores)
       rm(cores)
       gc()
-      
+
       df_C_index <- do.call(rbind, list_C_index)
       df_C_index <- data.frame(df_C_index)
       colnames(df_C_index) <- c("C_index_test", "C_index_train")
       df_C_index$ID <- i
-      
+
       rm(X,Y, list_C_index, opts, pb)
-      
-      
+
+
       return(df_C_index)
     }
-    
+
     # Run on full data
     df_parent <- Pred_cox(X, Y, test.n, a,lambda, iter, i)
-    
+
     # Prepare drug withdrawal data
     mat.C.index.test <- data.frame(array(data=NA, dim=c(nrow(df_parent), ncol(X_data))))
     colnames(mat.C.index.test) <- colnames(X_data)
     mat.C.index.train <- mat.C.index.test
-    
+
     cat("\n", "Parent prediction completed...")
-    
+
     for(dr in colnames(X_data)){
       X_data1 <- X_data[,colnames(X_data) != dr]
       df_wd <- Pred_cox(X_data1, Y, test.n, a,lambda, iter, i)
@@ -1175,20 +1175,20 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
       cat("\n",dr, "withdrawal prediction completed...")
       rm(df_wd, X_data1)
     }
-    
+
     C_loss_test <- colMeans((mat.C.index.test - df_parent$C_index_test))
     C_loss_train <- colMeans((mat.C.index.train - df_parent$C_index_train))
-    
+
     df_loss <- data.frame(C_loss_test=C_loss_test,
                           C_loss_train=C_loss_train,
                           Var=names(C_loss_train))
-    
-    
-    
+
+
+
     Optimization <- list()
     if("Naive" %in% Reduce ){
       cat("\nInitiating naive model reduction:\n")
-      
+
       dr=df_loss$Var[which.max(df_loss$C_loss_test)]
       X_data1 <- X_data
       df_parent1 <- df_parent
@@ -1196,7 +1196,7 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
       df_parent1$C_index_train <- mat.C.index.train[,dr]
       loss <- mean(df_parent1$C_index_test - df_parent$C_index_test)
       df_loss1 <- df_loss
-      
+
       list_naive_reduction <- list()
       list_naive_reduction[[1]] <- df_parent
       list_naive_reduction[[1]]$Data <- "WD0_full"
@@ -1204,41 +1204,41 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
       while(loss>=0 & ncol(X_data1)>2){
         dr=df_loss1$Var[which.max(df_loss1$C_loss_test)]
         X_data1 <- X_data1[,colnames(X_data1) != dr]
-        
+
         df_wd <- Pred_cox(X_data1, Y, test.n, a,lambda, iter, i)
         loss <- mean(df_wd$C_index_test - df_parent1$C_index_test)
-        
+
         list_naive_reduction[[j]] <- df_wd
         list_naive_reduction[[j]]$Data <- paste0("WD",j-1,"_", dr)
-        
+
         df_loss1 <- df_loss1[df_loss1$Var != dr,]
         df_parent1 <- df_wd
         j=j+1
       }
-      
+
       df_naive_reduction <- bind_rows(list_naive_reduction)
       df_naive_reduction$Data <- factor(df_naive_reduction$Data, levels=unique(df_naive_reduction$Data))
-      
+
       Optimization[["Naive_reduction"]] <- df_naive_reduction
-      
+
       cat("\nNaive model reduction completed...\n")
     }
-    
+
     return(list(df_parent = df_parent,
                 WD_initial = list(df_loss=df_loss,
                                   mat.C.index.test=mat.C.index.test,
                                   mat.C.index.train=mat.C.index.train),
                 WD_optimization = Optimization))
   }
-  
+
   if(Reduce != "Iterative"){
-    list_res_initial <- Drug_WD_test(X_data, 
-                                     y_data, 
+    list_res_initial <- Drug_WD_test(X_data,
+                                     y_data,
                                      Reduce=Reduce,
-                                     alpha=alpha, 
+                                     alpha=alpha,
                                      lambda=lambda,
                                      free_cores = free_cores,
-                                     test.n= test.n, 
+                                     test.n= test.n,
                                      iter=iter,
                                      log_AUC=log_AUC,
                                      Patient.Z=Patient.Z,
@@ -1263,13 +1263,13 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
     }
     save(list_res_initial, file=path)
   }else{
-    list_res_initial <- Drug_WD_test(X_data, 
-                                     y_data, 
+    list_res_initial <- Drug_WD_test(X_data,
+                                     y_data,
                                      Reduce="Naive",
-                                     alpha=alpha, 
+                                     alpha=alpha,
                                      lambda=lambda,
                                      free_cores = free_cores,
-                                     test.n= test.n, 
+                                     test.n= test.n,
                                      iter=iter,
                                      log_AUC=log_AUC,
                                      Patient.Z=Patient.Z,
@@ -1285,26 +1285,26 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
     X_data_red <- X_data[,which(colnames(X_data) %in% remaining_drugs)]
     list_res_initial$WD_optimization$Naive_reduction_summary <- df_naive_reduction_sum[1:which.max(df_naive_reduction_sum$Mean),]
     list_res_initial$WD_optimization$X_reduced <- X_data_red
-    
+
     list_res_iterations <- list()
     list_res_iterations[["WD_reduction_0"]] <- list_res_initial
     c = 1
     while(ncol(X_data_red)<ncol(X_data) & ncol(X_data_red)>2 & (df_naive_reduction_sum$Mean[which.max(df_naive_reduction_sum$Mean)] - df_naive_reduction_sum$Mean[1] >=0)){
       cat("\nIterative model reduction:",c,"\n")
       X_data <- X_data_red
-      list_res_iter <- Drug_WD_test(X_data, 
-                                    y_data, 
+      list_res_iter <- Drug_WD_test(X_data,
+                                    y_data,
                                     Reduce="Naive",
-                                    alpha=alpha, 
+                                    alpha=alpha,
                                     lambda=lambda,
                                     free_cores = free_cores,
-                                    test.n= test.n, 
+                                    test.n= test.n,
                                     iter=iter,
                                     log_AUC=log_AUC,
                                     Patient.Z=Patient.Z,
                                     Drug.Z =Drug.Z,
                                     RCPC=RCPC)
-      
+
       X_data <- X_data_red
       df_loss <- list_res_iter$WD_initial$df_loss
       df_naive_reduction <- list_res_iter$WD_optimization$Naive_reduction
@@ -1404,7 +1404,7 @@ Cox_forecasting_drug_withdrawal_2 <- function(X_data,
   Y <- y_data
   colnames(X) <- colnames(X_data)
   X_data <- X
-  
+
   Drug_WD_test <- function(X_data,
                            y_data,
                            Reduce=c("None","Naive"),
@@ -1424,7 +1424,7 @@ Cox_forecasting_drug_withdrawal_2 <- function(X_data,
                          Y,
                          test.n=test.n,
                          a=a,lambda=lambda, iter=iter, i=i){
-      
+
       cores <- min(c(parallel::detectCores()-free_cores, iter))
       cluster.cores<-makeCluster(cores)
       registerDoSNOW(cluster.cores)
@@ -1438,25 +1438,25 @@ Cox_forecasting_drug_withdrawal_2 <- function(X_data,
         X.1 <- X[Y[,2]==1,]
         Y.0 <- Y[Y[,2]==0,]
         Y.1 <- Y[Y[,2]==1,]
-        
+
         ind.0 <- sample(seq_len(nrow(Y.0)), size = test.n[1] , replace=FALSE)
         ind.1 <- sample(seq_len(nrow(Y.1)), size = test.n[2] , replace=FALSE)
-        
+
         train <- rbind(X.0[-ind.0,], X.1[-ind.1,])
         test <- rbind(X.0[ind.0,], X.1[ind.1,])
-        
+
         Y.train.loop <- rbind(Y.0[-ind.0,], Y.1[-ind.1,])
         Y.test.loop <- rbind(Y.0[ind.0,], Y.1[ind.1,])
-        
+
         model.loop <- glmnet(train, Y.train.loop, family = "cox", alpha = a, standardize = FALSE,lambda=lambda,  type.measure = "deviance")
         nfolds=nrow(train)
         model.loop.cv <- cv.glmnet(train, Y.train.loop, family = "cox", alpha = a, standardize = FALSE,lambda=lambda,  type.measure = "deviance", nfolds=nfolds)
-        
+
         c=Cindex(predict(model.loop, s = model.loop.cv$lambda.min, newx= data.matrix(test)), y=data.matrix(Y.test.loop))
         ct=Cindex(predict(model.loop, s = model.loop.cv$lambda.min, newx= data.matrix(train)), y=data.matrix(Y.train.loop))
-        
+
         rm(X.0, X.1, Y.1, Y.0, train, test, Y.train.loop, Y.test.loop, model.loop, model.loop.cv, ind.0, ind.1)
-        
+
         return(c(c,ct))
       }
       stopCluster(cluster.cores)
@@ -1464,30 +1464,30 @@ Cox_forecasting_drug_withdrawal_2 <- function(X_data,
       rm(cluster.cores)
       rm(cores)
       gc()
-      
+
       df_C_index <- do.call(rbind, list_C_index)
       df_C_index <- data.frame(df_C_index)
       colnames(df_C_index) <- c("C_index_test", "C_index_train")
       df_C_index$ID <- i
-      
+
       rm(X,Y, list_C_index, opts, pb)
-      
-      
+
+
       return(df_C_index)
     }
-    
-    
-    
+
+
+
     # Run on full data
     df_parent <- Pred_cox(X_data, y_data, test.n, a,lambda, iter, i)
-    
+
     # Prepare drug withdrawal data
     mat.C.index.test <- data.frame(array(data=NA, dim=c(nrow(df_parent), ncol(X_data))))
     colnames(mat.C.index.test) <- colnames(X_data)
     mat.C.index.train <- mat.C.index.test
-    
+
     cat("\n", "Parent prediction completed...", "\n")
-    
+
     cores <- min(c(parallel::detectCores()-free_cores, ncol(X_data)))
     cluster.cores<-makeCluster(cores)
     registerDoSNOW(cluster.cores)
@@ -1495,13 +1495,13 @@ Cox_forecasting_drug_withdrawal_2 <- function(X_data,
     progress <- function(n) setTxtProgressBar(pb, n)
     opts <- list(progress=progress)
     list_C_index <-foreach(d = 1:ncol(X_data), .packages = c("glmnet"), .options.snow=opts) %dopar%{
-      
-      
-      
+
+
+
       dr <- colnames(X_data)[d]
       X_data1 <- X_data[,colnames(X_data) != dr]
       Y <- data.matrix(y_data)
-      
+
       list_C_index <- list()
       for(b in 1:iter){
         set.seed(b)
@@ -1509,36 +1509,36 @@ Cox_forecasting_drug_withdrawal_2 <- function(X_data,
         X.1 <- X_data1[Y[,2]==1,]
         Y.0 <- Y[Y[,2]==0,]
         Y.1 <- Y[Y[,2]==1,]
-        
+
         ind.0 <- sample(seq_len(nrow(Y.0)), size = test.n[1] , replace=FALSE)
         ind.1 <- sample(seq_len(nrow(Y.1)), size = test.n[2] , replace=FALSE)
-        
+
         train <- rbind(X.0[-ind.0,], X.1[-ind.1,])
         test <- rbind(X.0[ind.0,], X.1[ind.1,])
-        
+
         Y.train.loop <- rbind(Y.0[-ind.0,], Y.1[-ind.1,])
         Y.test.loop <- rbind(Y.0[ind.0,], Y.1[ind.1,])
-        
+
         model.loop <- glmnet(train, Y.train.loop, family = "cox", alpha = a, standardize = FALSE,lambda=lambda,  type.measure = "deviance")
         nfolds=nrow(train)
         model.loop.cv <- cv.glmnet(train, Y.train.loop, family = "cox", alpha = a, standardize = FALSE,lambda=lambda,  type.measure = "deviance", nfolds=nfolds)
-        
+
         c=Cindex(predict(model.loop, s = model.loop.cv$lambda.min, newx= data.matrix(test)), y=data.matrix(Y.test.loop))
         ct=Cindex(predict(model.loop, s = model.loop.cv$lambda.min, newx= data.matrix(train)), y=data.matrix(Y.train.loop))
-        
+
         #rm(X.0, X.1, Y.1, Y.0, train, test, Y.train.loop, Y.test.loop, model.loop, model.loop.cv, ind.0, ind.1)
         list_C_index[[b]] <- c(c,ct)
       }
-      
+
       df_C_index <- do.call(rbind, list_C_index)
       df_C_index <- data.frame(df_C_index)
       colnames(df_C_index) <- c("C_index_test", "C_index_train")
       df_C_index$ID <- i
-      
+
       gc()
-      
+
       df_wd <- df_C_index
-      
+
       #rm(X_data1)
       return(df_wd)
     }
@@ -1547,27 +1547,27 @@ Cox_forecasting_drug_withdrawal_2 <- function(X_data,
     rm(cluster.cores)
     rm(cores)
     gc()
-    
+
     cat("\n", "WD test completed...", "\n")
-    
+
     names(list_C_index) <- colnames(X_data)
     for(dr in names(list_C_index)){
       mat.C.index.test[,dr] <- list_C_index[[dr]]$C_index_test
       mat.C.index.train[,dr] <- list_C_index[[dr]]$C_index_train
     }
-    
+
     C_loss_test <- colMeans((mat.C.index.test - df_parent$C_index_test))
     C_loss_train <- colMeans((mat.C.index.train - df_parent$C_index_train))
-    
+
     df_loss <- data.frame(C_loss_test=C_loss_test,
                           C_loss_train=C_loss_train,
                           Var=names(C_loss_train))
-    
-    
+
+
     Optimization <- list()
     if("Naive" %in% Reduce ){
       cat("\nInitiating naive model reduction:\n")
-      
+
       dr=as.character(df_loss$Var[which.max(df_loss$C_loss_test)])
       df_parent1 <- df_parent
       df_parent1$C_index_test <- mat.C.index.test[,dr]
@@ -1575,7 +1575,7 @@ Cox_forecasting_drug_withdrawal_2 <- function(X_data,
       loss <- mean(df_parent1$C_index_test - df_parent$C_index_test)
       df_loss1 <- df_loss
       X_data1 <- X_data
-      
+
       list_naive_reduction <- list()
       list_naive_reduction[[1]] <- df_parent
       list_naive_reduction[[1]]$Data <- "WD0_full"
@@ -1584,13 +1584,13 @@ Cox_forecasting_drug_withdrawal_2 <- function(X_data,
       while(loss>=0 & ncol(X_data1)>2){
         dr=as.character(df_loss1$Var[which.max(df_loss1$C_loss_test)])
         X_data1 <- X_data1[,colnames(X_data1) != dr]
-        
+
         df_wd <- Pred_cox(X_data1, Y, test.n, a,lambda, iter, i)
         loss <- mean(df_wd$C_index_test - df_parent1$C_index_test)
-        
+
         list_naive_reduction[[j]] <- df_wd
         list_naive_reduction[[j]]$Data <- paste0("WD",j-1,"_", dr)
-        
+
         df_loss1 <- df_loss1[df_loss1$Var != dr,]
         df_parent1 <- df_wd
         if(loss>=0){
@@ -1598,15 +1598,15 @@ Cox_forecasting_drug_withdrawal_2 <- function(X_data,
         }
         j=j+1
       }
-      
+
       df_naive_reduction <- bind_rows(list_naive_reduction)
       df_naive_reduction$Data <- factor(df_naive_reduction$Data, levels=unique(df_naive_reduction$Data))
-      
+
       Optimization[["Naive_reduction"]] <- df_naive_reduction
-      
+
       cat("\nNaive model reduction completed...\n")
     }
-    
+
     return(list(df_parent = df_parent,
                 X_initial = X_data,
                 X_final = X_data_best,
@@ -1615,15 +1615,15 @@ Cox_forecasting_drug_withdrawal_2 <- function(X_data,
                                   mat.C.index.train=mat.C.index.train),
                 WD_optimization = Optimization))
   }
-  
+
   if(!grepl("Iterative", Reduce)){
-    list_res_initial <- Drug_WD_test(X_data, 
-                                     y_data, 
+    list_res_initial <- Drug_WD_test(X_data,
+                                     y_data,
                                      Reduce=Reduce,
-                                     alpha=alpha, 
+                                     alpha=alpha,
                                      lambda=lambda,
                                      free_cores = free_cores,
-                                     test.n= test.n, 
+                                     test.n= test.n,
                                      iter=iter,
                                      log_AUC=log_AUC,
                                      Patient.Z=Patient.Z,
@@ -1640,17 +1640,17 @@ Cox_forecasting_drug_withdrawal_2 <- function(X_data,
     }
     save(list_res_initial, file=paste0(path, ".RData"))
   }else{
-    
-    
+
+
     if(Reduce == "Iterative"){
-      
-      list_res_initial <- Drug_WD_test(X_data, 
-                                       y_data, 
+
+      list_res_initial <- Drug_WD_test(X_data,
+                                       y_data,
                                        Reduce="Naive",
-                                       alpha=alpha, 
+                                       alpha=alpha,
                                        lambda=lambda,
                                        free_cores = free_cores,
-                                       test.n= test.n, 
+                                       test.n= test.n,
                                        iter=iter,
                                        log_AUC=log_AUC,
                                        Patient.Z=Patient.Z,
@@ -1661,42 +1661,42 @@ Cox_forecasting_drug_withdrawal_2 <- function(X_data,
       df_naive_reduction_sum <- df_naive_reduction %>% group_by(ID, Data) %>% summarise(Mean=mean(C_index_test), Median=median(C_index_test), .groups = 'drop')
       list_res_initial$WD_optimization$Naive_reduction_summary <- df_naive_reduction_sum[1:which.max(df_naive_reduction_sum$Mean),]
       save(list_res_initial, file=paste0(path, ".RData"))
-      
+
       X_data_red <- list_res_initial$X_final
       delta <- ncol(list_res_initial$X_final) - ncol(list_res_initial$X_initial)
-      
+
       list_res_iterations <- list()
       list_res_iterations[["WD_reduction_0"]] <- list_res_initial
       c = 1
       while(delta<0 & ncol(X_data_red)>2){
         cat("\nIterative model reduction:",c,"\n")
         X_data <- X_data_red
-        list_res_iter <- Drug_WD_test(X_data, 
-                                      y_data, 
+        list_res_iter <- Drug_WD_test(X_data,
+                                      y_data,
                                       Reduce="Naive",
-                                      alpha=alpha, 
+                                      alpha=alpha,
                                       lambda=lambda,
                                       free_cores = free_cores,
-                                      test.n= test.n, 
+                                      test.n= test.n,
                                       iter=iter,
                                       log_AUC=log_AUC,
                                       Patient.Z=Patient.Z,
                                       Drug.Z =Drug.Z,
                                       RCPC=RCPC,
                                       i=i)
-        
+
         df_loss <- list_res_iter$WD_initial$df_loss
         df_naive_reduction <- list_res_iter$WD_optimization$Naive_reduction
         df_naive_reduction_sum <- df_naive_reduction %>% group_by(ID, Data) %>% summarise(Mean=mean(C_index_test), Median=median(C_index_test), .groups = 'drop')
-        
+
         X_data_red <- list_res_iter$X_final
-        
+
         delta <- ncol(list_res_iter$X_final) - ncol(list_res_iter$X_initial)
-        
+
         list_res_iter$WD_optimization$Naive_reduction_summary <- df_naive_reduction_sum[1:which.max(df_naive_reduction_sum$Mean),]
         list_res_iterations[[paste0("WD_reduction_", c)]] <- list_res_iter
         save(list_res_iterations, file=paste0(path, ".RData"))
-        
+
         list_red <- list()
         for(j in 1:length(list_res_iterations)){
           list_red[[j]] <- list_res_iterations[[j]]$WD_optimization$Naive_reduction %>%
@@ -1704,7 +1704,7 @@ Cox_forecasting_drug_withdrawal_2 <- function(X_data,
           list_red[[j]]$Iter <- j-1
         }
         df_reduction <- bind_rows(list_red)
-        
+
         ggexport(ggarrange(ggplot(df_reduction, aes(x=paste(Iter,Data), y=C_index_test))+
                              geom_hline(yintercept = 0.5, lty=2, alpha=0.5)+
                              geom_hline(yintercept = 0.75, lty=2, alpha=0.5)+
@@ -1718,7 +1718,7 @@ Cox_forecasting_drug_withdrawal_2 <- function(X_data,
                              theme(axis.text.x = element_text(angle = 90, hjust = 1),
                                    panel.grid.minor = element_blank(),
                                    panel.grid.major = element_blank()),
-                           
+
                            ggplot(df_reduction, aes(x=paste(Iter,Data), y=C_index_train))+
                              geom_hline(yintercept = 0.5, lty=2, alpha=0.5)+
                              geom_hline(yintercept = 0.75, lty=2, alpha=0.5)+
@@ -1734,62 +1734,62 @@ Cox_forecasting_drug_withdrawal_2 <- function(X_data,
                                    panel.grid.major = element_blank())),
                  height = 5.5, width = (length(unique(paste(df_reduction$Iter, df_reduction$Data)))*0.65 + 1.25),
                  filename = paste0(path, ".pdf"))
-        
-        
+
+
         c = c + 1
       }
     }else{
-      list_res_initial <- Drug_WD_test(X_data, 
-                                       y_data, 
+      list_res_initial <- Drug_WD_test(X_data,
+                                       y_data,
                                        Reduce="Naive",
-                                       alpha=alpha, 
+                                       alpha=alpha,
                                        lambda=lambda,
                                        free_cores = free_cores,
-                                       test.n= test.n, 
+                                       test.n= test.n,
                                        iter=iter,
                                        log_AUC=log_AUC,
                                        Patient.Z=Patient.Z,
                                        Drug.Z =Drug.Z,
                                        RCPC=RCPC,
                                        i=i)
-    
+
 
       X_data_red <- list_res_initial$X_initial[,colnames(list_res_initial$X_initial) %in% as.character(list_res_initial$WD_initial$df_loss$Var)[list_res_initial$WD_initial$df_loss$C_loss_test<0]]
       delta <- ncol(X_data_red) - ncol(list_res_initial$X_initial)
-      
+
       list_res_iterations <- list()
       list_res_iterations[["WD_reduction_0"]] <- list_res_initial
-      
+
       save(list_res_iterations, file=paste0(path, ".RData"))
       c = 1
       while(delta<0 & ncol(X_data_red)>2){
         cat("\nIterative model reduction:",c,"\n")
         X_data <- X_data_red
-        list_res_iter <- Drug_WD_test(X_data, 
-                                      y_data, 
+        list_res_iter <- Drug_WD_test(X_data,
+                                      y_data,
                                       Reduce="Naive",
-                                      alpha=alpha, 
+                                      alpha=alpha,
                                       lambda=lambda,
                                       free_cores = free_cores,
-                                      test.n= test.n, 
+                                      test.n= test.n,
                                       iter=iter,
                                       log_AUC=log_AUC,
                                       Patient.Z=Patient.Z,
                                       Drug.Z =Drug.Z,
                                       RCPC=RCPC,
                                       i=i)
-        
+
         X_data_red <- list_res_iter$X_initial[,colnames(list_res_iter$X_initial) %in% as.character(list_res_iter$WD_initial$df_loss$Var)[list_res_iter$WD_initial$df_loss$C_loss_test<0]]
         delta <- ncol(X_data_red) - ncol(list_res_iter$X_initial)
-        
+
         list_res_iterations[[paste0("WD_reduction_", c)]] <- list_res_iter
-        
+
         save(list_res_iterations, file=paste0(path, ".RData"))
-        
+
         c = c + 1
       }
     }
-    
+
     return(list_res_iterations)
   }
 }
