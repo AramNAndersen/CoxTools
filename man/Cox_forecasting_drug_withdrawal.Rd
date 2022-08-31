@@ -24,7 +24,7 @@ Cox_forecasting_drug_withdrawal(
 
 \item{y_data}{Survival data}
 
-\item{Reduce}{Variable removal for dimension reduction. "None" for only testing the variables. "Naive" reduce the model by removing one and one variable starting from highest C-index gain until optimal model is found. "Iterative" will re-test variables as the model is reduced (UNDER DEVELOPMENT).}
+\item{Reduce}{Variable removal for dimension reduction. "None" for only testing the variables. "Naive" reduce the model by removing one and one variable starting from highest C-index gain until optimal model is found.}
 
 \item{alpha}{Penalty type. 0 for L2 (Ridge), 1 for L1 (Lasso), or any number between 0 and 1 for elastic net penalty.}
 
