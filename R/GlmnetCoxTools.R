@@ -252,8 +252,8 @@ Cox_forecasting_glmnet_CVA_center <- function(X_data,
     for(Transform in c("log2(AUC)", "AUC")[log_AUC]){
       for(pt.st in c(TRUE, FALSE)[Patient.Z] ){
         for(cpc in RCPC){
-          for(drug.st in c(TRUE, FALSE, "healthy")[Drug.C]){
-            i=paste0(Transform, c("/Patient_stdz")[pt.st], ifelse(drug.st=="healthy","/Healthy_controls",c("/Drug_centered")[drug.st]),"/RCPC_", cpc, "/Penalty_", al)
+          for(drug.st in c(1, 2, "healthy")[Drug.C]){
+            i=paste0(Transform, c("/Patient_stdz")[pt.st], ifelse(drug.st=="healthy","/Healthy_controls",c("/Drug_centered","")[drug.st]),"/RCPC_", cpc, "/Penalty_", al)
             set.seed(1)
             X <- X_data
             l=min(data.frame(replace(X, X == 0, 1)))
@@ -284,7 +284,7 @@ Cox_forecasting_glmnet_CVA_center <- function(X_data,
             if(drug.st == "healthy"){
               X <- t((t(X) - as.numeric(X[nrow(X),])))
               X <- X[-nrow(X),]
-            }else if(drug.st){
+            }else if(drug.st == 1){
               X <- t((t(X) - colMeans(X)))
             }
 
