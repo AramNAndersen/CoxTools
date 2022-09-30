@@ -18,18 +18,18 @@ library(doSNOW)
 library("CoxTools")
 
 # Model C-index testing
-list_Ridge_andElnet_Cox_testing <- Cox_forecasting_glmnet_CVA(X_data=X.train.AUC, 
-                                                              y_data=y.train, 
-                                                              alpha=c(0,"CVA"), 
-                                                              lambda=c(exp(seq(-4,6, 0.1))),
-                                                              free_cores = 2,
-                                                              test.n= c(6,4), 
-                                                              nfolds = nrow(y.train.red),
-                                                              iter=200,
-                                                              log_AUC=1:2,
-                                                              Patient.Z=1:2,
-                                                              Drug.Z =1:2,
-                                                              RCPC=0:4)
+list_Cox_testing <- Cox_forecasting_glmnet_CVA(X_data=X.train.AUC, 
+                                               y_data=y.train, 
+                                               alpha=c(0,1,"CVA"), 
+                                               lambda=c(exp(seq(-4,6, 0.1))),
+                                               free_cores = 2,
+                                               test.n= c(6,4), 
+                                               nfolds = nrow(y.train.red),
+                                               iter=200,
+                                               log_AUC=1:2,
+                                               Patient.Z=1:2,
+                                               Drug.Z =1:2,
+                                               RCPC=0:4)
                                                               
 # Variable importance/predictivity scoring by drug withdrawal (with mode reduction)
 Results_Cox_drug_naive <- Cox_forecasting_drug_withdrawal(X.train.AUC, 
@@ -50,19 +50,17 @@ Results_Cox_betas <- Cox_bootstrapping(X.train.AUC,
                                        y.train, 
                                        alpha=0, 
                                        lambda=c(exp(seq(-4,6, 0.1))),
-                                       pre.CV=TRUE,
-                                       lambda_opt = cva_fit_cv_best_alldata$lambda[cva_fit_cv_best_alldata$alpha==0 &
-                                                                                              cva_fit_cv_best_alldata$dataset.id == 
-                                                                                              "log2(AUC)/Patient_stdz/RCPC_0/Penalty_0"],
+                                       pre.CV=FALSE,
+                                       lambda_opt = 0,
                                        free_cores = 2,
                                        iter=200,
                                        log_AUC=1,
                                        Patient.Z=1,
                                        Drug.Z =2,
                                        RCPC=0)
+                                       
 # Combination data model C-index testing
-list_combined_data_Cox_testing <- Cox_forecasting_glmnet_combination(X.train.AUC[,!(colnames(X.train.AUC) %in% 
-                                                                                   unique(gsub(".*_","",df_naive_reduction$Data)))], 
+list_combined_data_Cox_testing <- Cox_forecasting_glmnet_combination(X.train.AUC, 
                                                                      y.train, 
                                                                      X.train.gen,
                                                                      alpha=0, 
