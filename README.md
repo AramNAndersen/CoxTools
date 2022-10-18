@@ -1,5 +1,5 @@
 # CoxTools
-Tools for clinical forecasting from drug screens using Cox regression.
+Tools for clinical forecasting from drug screens using regularized Cox regression based on the Glmnet framework.
 The package requires dplyr, reshape, doSNOW, glmnet and glmnetUtils.
 
 # Installation:
@@ -15,7 +15,7 @@ library(glmnetUtils)
 library(reshape)
 library(dplyr)
 library(doSNOW)
-library("CoxTools")
+library(CoxTools)
 
 # Model C-index testing
 list_Cox_testing <- Cox_forecasting_glmnet_CVA(X_data=X.train.AUC, 
@@ -32,18 +32,18 @@ list_Cox_testing <- Cox_forecasting_glmnet_CVA(X_data=X.train.AUC,
                                                RCPC=0:4)
                                                               
 # Variable importance/predictivity scoring by drug withdrawal (with mode reduction)
-Results_Cox_drug_naive <- Cox_forecasting_drug_withdrawal(X.train.AUC, 
-                                                          y.train, 
-                                                          Reduce="Naive",
-                                                          alpha=0, 
-                                                          lambda=c(exp(seq(-4,6, 0.1))),
-                                                          free_cores = 2,
-                                                          test.n= c(6,4), 
-                                                          iter=200,
-                                                          log_AUC=1,
-                                                          Patient.Z=1,
-                                                          Drug.Z =2,
-                                                          RCPC=0)
+Results_Cox_drug_WD <- Cox_forecasting_drug_withdrawal(X.train.AUC, 
+                                                       y.train, 
+                                                       Reduce="Naive",
+                                                       alpha=0, 
+                                                       lambda=c(exp(seq(-4,6, 0.1))),
+                                                       free_cores = 2,
+                                                       test.n= c(6,4), 
+                                                       iter=200,
+                                                       log_AUC=1,
+                                                       Patient.Z=1,
+                                                       Drug.Z =2,
+                                                       RCPC=0)
 
 # Variable survival association statistics
 Results_Cox_betas <- Cox_bootstrapping(X.train.AUC, 
