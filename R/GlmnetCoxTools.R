@@ -205,215 +205,6 @@ Cox_forecasting_glmnet_CVA <- function(X_data,
               C_index_results = df_C.index.alldata))
 }
 #'
-#' Cox forecasting glmnet with alpha cross-validation and drug sensitivity centering or control subtraction
-#'
-#' C-index testing of Cox partial likelihood glmnet models for survival forecasting from ex vivo drug screens. With CVA.
-#'
-#' @param X_data Input drug screen data
-#' @param y_data Survival data
-#' @param alpha Penalty type. 0 for L2 (Ridge), 1 for L1 (Lasso), or any number between 0 and 1 for elastic net penalty. Set "CVA" for automatic selection of optimal penalty type.
-#' @param lambda Vector of regularization penalties.
-#' @param free_cores Number of free cores.
-#' @param test.n Vector of test set balance. First integer is the number of survivals, and second integer is the number of deaths.
-#' @param nfolds Cross-validation fold.
-#' @param iter Number of test iterations.
-#' @param log_AUC log2 transform of AUC. 1 for yes, 2 for no, or c(1,2) for both.
-#' @param Patient.Z Patient-wise standardization. 1 for yes, 2 for no, or c(1,2) for both.
-#' @param Drug.C Drug-wise centering. 1 for yes, 2 for no, 3 for healthy controls (last row in the dataset),  or c(1,2,3) for all.
-#' @param RCPC Removal of confounding principal components.
-#' @importFrom magrittr %>%
-#'
-#' @return
-#' A list containing results from cross-validation alpha optimization and C-index test results
-#'
-#'
-#' @author
-#' Aram N. Andersen \email{aram.n.andersen@@gmail.com}
-#'
-#' @export
-Cox_forecasting_glmnet_CVA_center <- function(X_data,
-                                              y_data,
-                                              alpha=0,
-                                              lambda=c(exp(seq(-4,6, 0.1))),
-                                              free_cores = 2,
-                                              test.n= c(6,4),
-                                              nfolds = nrow(y.train.red),
-                                              iter=200,
-                                              log_AUC=c(1:2),
-                                              Patient.Z=c(1:2),
-                                              Drug.C =c(1:3),
-                                              RCPC=c(0,1,2,3,4)){
-  cva_fit_cv_best_alldata <- c()
-  cva_fit_plots_alldata <- list()
-  cva_fit_coefs.alldata <- c()
-  df_C.index.alldata <- c()
-  
-  for(al in alpha){
-    for(Transform in c("log2(AUC)", "AUC")[log_AUC]){
-      for(pt.st in c(TRUE, FALSE)[Patient.Z] ){
-        for(cpc in RCPC){
-          for(drug.st in Drug.C){
-            i=paste0(Transform, c("/Patient_stdz")[pt.st], ifelse(drug.st==3,"/Healthy_controls",c("/Drug_centered","")[drug.st]),"/RCPC_", cpc, "/Penalty_", al)
-            set.seed(1)
-            X <- X_data
-            l=min(data.frame(replace(X, X == 0, 1)))
-            if(Transform=="log2(AUC)"){
-              if(length(which(X <= 0))){
-                X <- data.matrix(-log2(X + l))
-              }else{
-                X <- data.matrix(-log2(X))
-              }
-            }else{
-              X <- data.matrix(X)
-            }
-            if(pt.st){
-              X <- (X - rowMeans(X))/matrixStats::rowSds(X)
-            }
-            if(cpc>0){
-              x_sd <- matrixStats::colSds(X)
-              x_mean <- colMeans(X)
-              X <- t((t(X) - colMeans(X))/matrixStats::colSds(X))
-              if(length(which(is.na(X)))){X <- replace(X,is.na(X),0)}
-              svdz <- svd(t(X))
-              X <- svdz$u[,-c(1:cpc)] %*% diag(svdz$d[-c(1:cpc)]) %*% t(svdz$v[,-c(1:cpc)])
-              X <- X*x_sd + x_mean
-              X <- t(X)
-              rm(svdz, x_mean, x_sd)
-            }
-            
-            if(drug.st == 3){
-              X <- t((t(X) - as.numeric(X[nrow(X),])))
-              X <- X[-nrow(X),]
-            }else if(drug.st == 1){
-              X <- t((t(X) - colMeans(X)))
-            }
-            
-            Y <- y_data
-            
-            cores <- parallel::detectCores()-free_cores
-            cluster.cores<-makeCluster(cores)
-            cva <- cva.glmnet(x=X, y=Y, alpha = seq(0, 1, len = 20)^3, family = "cox",
-                              standardize = FALSE, type.measure= "deviance", cv.type	="min", nfolds=nfolds,
-                              outerParallel=cluster.cores)
-            stopCluster(cluster.cores)
-            closeAllConnections()
-            rm(cluster.cores)
-            rm(cores)
-            
-            names(cva$modlist) <- round(cva$alpha, digits = 6)
-            cva_fit_cv <- cva$modlist %>% lapply(function(x) do.call("cbind", x[c(1:6)]) %>% as_tibble())
-            cva_fit_cv <- cva_fit_cv %>%
-              bind_rows(.id = "alpha") %>%
-              mutate(alpha = as.numeric(alpha))
-            
-            # Collect cvm plots drug screen data
-            p=cva_fit_cv %>%
-              mutate(f_alpha = factor(alpha), cv_min = min(cvm)) %>%
-              ggplot(aes(x = lambda, y = cvm, colour = f_alpha)) +
-              scale_x_log10() +
-              geom_line() +
-              geom_hline(aes(yintercept = cv_min)) +
-              labs(colour = expression(alpha)) +
-              facet_wrap(~f_alpha, scales = "free_y")+
-              theme_minimal()+
-              theme()+
-              theme(axis.text.x = element_text(angle = 45, hjust = 1))
-            cva_fit_plots_alldata[[i]] <- p
-            
-            # Collect top cva results drug screen data
-            cva_fit_cv$rank <- rank(cva_fit_cv$cvm)
-            cva_fit_cv$class <- "Ridge"
-            cva_fit_cv$class[cva_fit_cv$alpha !=0] <- "ElasticNet"
-            cva_fit_cv$class[cva_fit_cv$alpha ==1] <- "Lasso"
-            cva_fit_cv <- data.frame(cva_fit_cv)
-            rownames(cva_fit_cv) <- paste0(cva_fit_cv$class,cva_fit_cv$alpha, cva_fit_cv$rank)
-            cva_fit_cv_best <- cva_fit_cv[(cva_fit_cv %>% mutate(id = paste0(class, alpha)) %>% group_by(id) %>% summarise(rank.min = min(rank)) %>% mutate(best.hit = paste0(id, rank.min)))$best.hit,]
-            cva_fit_cv_best$dataset.id <- i
-            cva_fit_cv_best_alldata <- rbind(cva_fit_cv_best_alldata, cva_fit_cv_best)
-            
-            # Collect coefficients for all models (drug screen data)
-            coefs.alpha <- c()
-            for(j in 1:nrow(cva_fit_cv_best)){
-              model <- glmnet(X, Y, family = "cox", alpha = cva_fit_cv_best$alpha[j], standardize = FALSE,lambda=lambda,  type.measure = "deviance")
-              coefs  <- data.frame(as.matrix(coef(model, s = cva_fit_cv_best$lambda[j])))
-              coefs <- data.matrix(coefs)
-              colnames(coefs) <- paste0("alpha", cva_fit_cv_best$alpha[j])
-              coefs.alpha <- cbind(coefs.alpha, coefs)
-              rm(model, coefs)
-            }
-            coefs.alpha<-data.frame(coefs.alpha)
-            coefs.alpha$dataset.id <- i
-            cva_fit_coefs.alldata <- rbind(cva_fit_coefs.alldata, coefs.alpha)
-            
-            # Compute out-of-sample prediction c-index (drug screen data)
-            if(al == "CVA"){
-              a = cva_fit_cv_best$alpha[which.min(cva_fit_cv_best$cvm)]
-            }else{
-              a = as.numeric(al)
-            }
-            cores <- parallel::detectCores()-free_cores
-            cluster.cores<-makeCluster(cores)
-            registerDoSNOW(cluster.cores)
-            pb <- txtProgressBar(max=iter, style=3)
-            progress <- function(n) setTxtProgressBar(pb, n)
-            opts <- list(progress=progress)
-            list_C_index <-foreach(b = 1:iter, .packages = c("glmnet"), .options.snow=opts) %dopar%{
-              set.seed(b)
-              setTxtProgressBar(pb,b)
-              X.0 <- X[Y[,2]==0,]
-              X.1 <- X[Y[,2]==1,]
-              Y.0 <- Y[Y[,2]==0,]
-              Y.1 <- Y[Y[,2]==1,]
-              
-              ind.0 <- sample(seq_len(nrow(Y.0)), size = test.n[1] , replace=FALSE)
-              ind.1 <- sample(seq_len(nrow(Y.1)), size = test.n[2] , replace=FALSE)
-              
-              train <- rbind(X.0[-ind.0,], X.1[-ind.1,])
-              test <- rbind(X.0[ind.0,], X.1[ind.1,])
-              
-              Y.train.loop <- rbind(Y.0[-ind.0,], Y.1[-ind.1,])
-              Y.test.loop <- rbind(Y.0[ind.0,], Y.1[ind.1,])
-              
-              model.loop <- glmnet(train, Y.train.loop, family = "cox", alpha = a, standardize = FALSE,lambda=lambda,  type.measure = "deviance")
-              nfolds=nrow(train)
-              model.loop.cv <- cv.glmnet(train, Y.train.loop, family = "cox", alpha = a, standardize = FALSE,lambda=lambda,  type.measure = "deviance", nfolds=nfolds)
-              
-              c=Cindex(predict(model.loop, s = model.loop.cv$lambda.min, newx= data.matrix(test)), y=data.matrix(Y.test.loop))
-              ct=Cindex(predict(model.loop, s = model.loop.cv$lambda.min, newx= data.matrix(train)), y=data.matrix(Y.train.loop))
-              
-              rm(X.0, X.1, Y.1, Y.0, train, test, Y.train.loop, Y.test.loop, model.loop, model.loop.cv, ind.0, ind.1)
-              
-              return(c(c,ct))
-            }
-            stopCluster(cluster.cores)
-            closeAllConnections()
-            rm(cluster.cores)
-            rm(cores)
-            gc()
-            
-            df_C_index <- do.call(rbind, list_C_index)
-            df_C_index <- data.frame(df_C_index)
-            colnames(df_C_index) <- c("C_index_test", "C_index_train")
-            df_C_index$Iteration <- 1:iter
-            df_C_index$ID <- i
-            
-            df_C.index.alldata <- rbind(df_C.index.alldata, df_C_index)
-            
-            cat("\nAnalysis completed for: ", i,"\n")
-            rm(X,Y, cva_fit_cv_best, coefs.alpha, df_C_index, cva, cva_fit_cv, list_C_index, opts, pb, p)
-            
-          }
-        }
-      }
-    }
-  }
-  return(list(CVA_results = cva_fit_cv_best_alldata,
-              CVA_plots = cva_fit_plots_alldata,
-              CVA_coefficients= cva_fit_coefs.alldata,
-              C_index_results = df_C.index.alldata))
-}
-#'
-#'
 #' Cox forecasting glmnet
 #'
 #' C-index testing of Cox partial likelihood glmnet models for survival forecasting from ex vivo drug screens.
@@ -1231,97 +1022,38 @@ Cox_forecasting_drug_withdrawal <- function(X_data,
                 WD_optimization = Optimization))
   }
 
-  if(Reduce != "Iterative"){
-    list_res_initial <- Drug_WD_test(X_data,
-                                     y_data,
-                                     Reduce=Reduce,
-                                     alpha=alpha,
-                                     lambda=lambda,
-                                     free_cores = free_cores,
-                                     test.n= test.n,
-                                     iter=iter,
-                                     log_AUC=log_AUC,
-                                     Patient.Z=Patient.Z,
-                                     Drug.Z =Drug.Z,
-                                     RCPC=RCPC)
-    if(Reduce == "Naive"){
-      df_loss <- list_res_initial$WD_initial$df_loss
-      df_naive_reduction <- list_res_initial$WD_optimization$Naive_reduction
-      df_naive_reduction_sum <- df_naive_reduction %>% group_by(ID, Data) %>% summarise(Mean=mean(C_index_test), Median=median(C_index_test))
-      remove_stop <- which.max(df_naive_reduction_sum$Mean)
-      remove_drugs <-gsub(".*_","", df_naive_reduction_sum$Data[2:remove_stop])
-      remaining_drugs <- colnames(X)
-      remaining_drugs <- remaining_drugs[!(remaining_drugs %in% remove_drugs)]
-      X_data_red <- X_data[,which(colnames(X_data) %in% remaining_drugs)]
-      list_res_initial$WD_optimization$Naive_reduction_summary <- df_naive_reduction_sum
-      list_res_initial$WD_optimization$remove_drugs <- remove_drugs
-      list_res_initial$WD_optimization$remaining_drugs <- remaining_drugs
-      list_res_initial$WD_optimization$X_reduced <- X_data_red
-      return(list_res_initial)
-    }else{
-      return(list_res_initial)
-    }
-    save(list_res_initial, file=path)
-  }else{
-    list_res_initial <- Drug_WD_test(X_data,
-                                     y_data,
-                                     Reduce="Naive",
-                                     alpha=alpha,
-                                     lambda=lambda,
-                                     free_cores = free_cores,
-                                     test.n= test.n,
-                                     iter=iter,
-                                     log_AUC=log_AUC,
-                                     Patient.Z=Patient.Z,
-                                     Drug.Z =Drug.Z,
-                                     RCPC=RCPC)
+
+  list_res_initial <- Drug_WD_test(X_data,
+                                   y_data,
+                                   Reduce=Reduce,
+                                   alpha=alpha,
+                                   lambda=lambda,
+                                   free_cores = free_cores,
+                                   test.n= test.n,
+                                   iter=iter,
+                                   log_AUC=log_AUC,
+                                   Patient.Z=Patient.Z,
+                                   Drug.Z =Drug.Z,
+                                   RCPC=RCPC)
+  if(Reduce == "Naive"){
     df_loss <- list_res_initial$WD_initial$df_loss
     df_naive_reduction <- list_res_initial$WD_optimization$Naive_reduction
     df_naive_reduction_sum <- df_naive_reduction %>% group_by(ID, Data) %>% summarise(Mean=mean(C_index_test), Median=median(C_index_test))
     remove_stop <- which.max(df_naive_reduction_sum$Mean)
-    remove_drugs <-gsub(".*_","", df_naive_reduction_sum$Data[1:remove_stop])[-1]
+    remove_drugs <-gsub(".*_","", df_naive_reduction_sum$Data[2:remove_stop])
     remaining_drugs <- colnames(X)
     remaining_drugs <- remaining_drugs[!(remaining_drugs %in% remove_drugs)]
     X_data_red <- X_data[,which(colnames(X_data) %in% remaining_drugs)]
-    list_res_initial$WD_optimization$Naive_reduction_summary <- df_naive_reduction_sum[1:which.max(df_naive_reduction_sum$Mean),]
+    list_res_initial$WD_optimization$Naive_reduction_summary <- df_naive_reduction_sum
+    list_res_initial$WD_optimization$remove_drugs <- remove_drugs
+    list_res_initial$WD_optimization$remaining_drugs <- remaining_drugs
     list_res_initial$WD_optimization$X_reduced <- X_data_red
-
-    list_res_iterations <- list()
-    list_res_iterations[["WD_reduction_0"]] <- list_res_initial
-    c = 1
-    while(ncol(X_data_red)<ncol(X_data) & ncol(X_data_red)>2 & (df_naive_reduction_sum$Mean[which.max(df_naive_reduction_sum$Mean)] - df_naive_reduction_sum$Mean[1] >=0)){
-      cat("\nIterative model reduction:",c,"\n")
-      X_data <- X_data_red
-      list_res_iter <- Drug_WD_test(X_data,
-                                    y_data,
-                                    Reduce="Naive",
-                                    alpha=alpha,
-                                    lambda=lambda,
-                                    free_cores = free_cores,
-                                    test.n= test.n,
-                                    iter=iter,
-                                    log_AUC=log_AUC,
-                                    Patient.Z=Patient.Z,
-                                    Drug.Z =Drug.Z,
-                                    RCPC=RCPC)
-
-      X_data <- X_data_red
-      df_loss <- list_res_iter$WD_initial$df_loss
-      df_naive_reduction <- list_res_iter$WD_optimization$Naive_reduction
-      df_naive_reduction_sum <- df_naive_reduction %>% group_by(ID, Data) %>% summarise(Mean=mean(C_index_test), Median=median(C_index_test))
-      remove_stop <- which.max(df_naive_reduction_sum$Mean)
-      remove_drugs <-gsub(".*_","", df_naive_reduction_sum$Data[1:remove_stop])[-1]
-      remaining_drugs <- colnames(X)
-      remaining_drugs <- remaining_drugs[!(remaining_drugs %in% remove_drugs)]
-      X_data_red <- X_data[,which(colnames(X_data) %in% remaining_drugs)]
-      list_res_iter$WD_optimization$Naive_reduction_summary <- df_naive_reduction_sum[1:which.max(df_naive_reduction_sum$Mean),]
-      list_res_iter$WD_optimization$X_reduced <- X_data_red
-      list_res_iterations[[paste0("WD_reduction_", c)]] <- list_res_iter
-      save(list_res_iterations, file=path)
-      c = c + 1
-    }
-    return(list_res_iterations)
+    return(list_res_initial)
+  }else{
+    return(list_res_initial)
   }
+  save(list_res_initial, file=path)
+
 }
 #'
 #' Cox forecasting glmnet, drug withdrawal testing
