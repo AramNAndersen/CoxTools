@@ -4,7 +4,7 @@ The package requires dplyr, reshape, doSNOW, glmnet and glmnetUtils.
 
 # Installation:
 ``` r
-devtools::install_github("AramNAndersen/CoxTools",
+devtools::install_github("AramNAndersen/CoxTools-dev",
                          ref="main")
 ``` 
 # Example:
