@@ -1,5 +1,5 @@
 # CoxTools
-Tools for clinical forecasting from drug screens using regularized Cox regression based on the Glmnet framework.
+Development of tools for clinical forecasting from drug screens using regularized Cox regression based on the Glmnet framework.
 The package requires dplyr, reshape, doSNOW, glmnet and glmnetUtils.
 
 # Installation:
