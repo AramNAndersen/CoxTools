@@ -5,8 +5,7 @@ The package requires dplyr, reshape, doSNOW, glmnet and glmnetUtils.
 # Installation:
 ``` r
 devtools::install_github("AramNAndersen/CoxTools",
-                         ref="main",
-                         auth_token = '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')
+                         ref="main")
 ``` 
 # Example:
 ``` r
@@ -18,8 +17,8 @@ library(doSNOW)
 library(CoxTools)
 
 # Model C-index testing
-list_Cox_testing <- Cox_forecasting_glmnet_CVA(X_data=X.train.AUC, 
-                                               y_data=y.train, 
+list_Cox_testing <- Cox_forecasting_glmnet_CVA(X_data=X.AUC, 
+                                               y_data=Y, 
                                                alpha=c(0,1,"CVA"), 
                                                lambda=c(exp(seq(-4,6, 0.1))),
                                                free_cores = 2,
@@ -32,8 +31,8 @@ list_Cox_testing <- Cox_forecasting_glmnet_CVA(X_data=X.train.AUC,
                                                RCPC=0:4)
                                                               
 # Variable importance/predictivity scoring by drug withdrawal (with mode reduction)
-Results_Cox_drug_WD <- Cox_forecasting_drug_withdrawal(X.train.AUC, 
-                                                       y.train, 
+Results_Cox_drug_WD <- Cox_forecasting_drug_withdrawal(X.AUC, 
+                                                       Y, 
                                                        Reduce="Naive",
                                                        alpha=0, 
                                                        lambda=c(exp(seq(-4,6, 0.1))),
@@ -46,8 +45,8 @@ Results_Cox_drug_WD <- Cox_forecasting_drug_withdrawal(X.train.AUC,
                                                        RCPC=0)
 
 # Variable survival association statistics
-Results_Cox_betas <- Cox_bootstrapping(X.train.AUC, 
-                                       y.train, 
+Results_Cox_betas <- Cox_bootstrapping(X.AUC, 
+                                       Y, 
                                        alpha=0, 
                                        lambda=c(exp(seq(-4,6, 0.1))),
                                        pre.CV=FALSE,
@@ -60,9 +59,9 @@ Results_Cox_betas <- Cox_bootstrapping(X.train.AUC,
                                        RCPC=0)
                                        
 # Combination data model C-index testing
-list_combined_data_Cox_testing <- Cox_forecasting_glmnet_combination(X.train.AUC, 
-                                                                     y.train, 
-                                                                     X.train.gen,
+list_combined_data_Cox_testing <- Cox_forecasting_glmnet_combination(X.AUC, 
+                                                                     Y, 
+                                                                     X.clinical,
                                                                      alpha=0, 
                                                                      lambda=c(exp(seq(-4,6, 0.1))),
                                                                      free_cores = 2,
